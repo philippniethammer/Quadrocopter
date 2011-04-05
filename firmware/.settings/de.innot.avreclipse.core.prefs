@@ -1,0 +1,8 @@
+#Tue Apr 05 19:37:31 CEST 2011
+avrtarget/ClockFrequency=8000000
+avrtarget/ExtRAMSize=0
+avrtarget/ExtendedRAM=false
+avrtarget/MCUType=atmega8535
+avrtarget/UseEEPROM=false
+avrtarget/UseExtendedRAMforHeap=true
+eclipse.preferences.version=1
