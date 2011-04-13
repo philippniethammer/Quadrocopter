@@ -17,6 +17,7 @@
  */
 
 #include <avr/io.h>
+#include <stdint.h>
 
 
 /*
@@ -73,7 +74,7 @@ void initializeMotors(void){
  * Left Motor on PB3 (OC0)
  * inverting value and setting OCR0 to it
  */
-void setMotorLeft(int speed){
+void setMotorLeft(unsigned char speed){
 	OCR0 = 0xff - speed;
 }
 
@@ -81,7 +82,7 @@ void setMotorLeft(int speed){
  * Right Motor on PD4 (OC1B)
  * setting OCR1BL to it
  */
-void setMotorRight(int speed){
+void setMotorRight(unsigned char speed){
 	OCR1BL = speed;
 }
 
@@ -89,7 +90,7 @@ void setMotorRight(int speed){
  * Front Motor on PD5 (OC1A)
  * setting OCR1AL to it
  */
-void setMotorFront(int speed){
+void setMotorFront(unsigned char speed){
 	OCR1AL = speed;
 }
 
@@ -97,14 +98,14 @@ void setMotorFront(int speed){
  * Back Motor on PD7 (OC2)
  * inverting value and setting OCR2 to it
  */
-void setMotorBack(int speed){
+void setMotorBack(unsigned char speed){
 	OCR2 = 0xff - speed;
 }
 
 /*
  * returning inverted value of OCR0;
  */
-int getMotorvalueLeft(void){
+unsigned char getMotorvalueLeft(void){
 
 	return 0xff - OCR0;
 }
@@ -112,7 +113,7 @@ int getMotorvalueLeft(void){
 /*
  * returning value of OCR1B low-byte
  */
-int getMotorvalueRight(void){
+unsigned char getMotorvalueRight(void){
 
 	return OCR1BL;
 }
@@ -120,7 +121,7 @@ int getMotorvalueRight(void){
 /*
  * returning value of OCR1A low-byte
  */
-int getMotorvalueFront(void){
+unsigned char getMotorvalueFront(void){
 
 	return OCR1AL;
 }
@@ -128,7 +129,7 @@ int getMotorvalueFront(void){
 /*
  * returning inverted value of OCR2;
  */
-int getMotorvalueBack(void){
+unsigned char getMotorvalueBack(void){
 
 	return 0xff - OCR2;
 }
