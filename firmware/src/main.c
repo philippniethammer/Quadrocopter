@@ -8,10 +8,24 @@
 
 #include "motors.h"
 
+
+/*
+ * executing startuproutines
+ * executes all initializations and routines needed to *boot*
+ */
+void initializeAll(void){
+	initializeMotors();
+
+
+}
+
+
+
 int main(void)
 {
 
-	initializeMotors();
+	initializeAll();
+
 
     while (1)
     {
@@ -20,3 +34,4 @@ int main(void)
 
     return (1);	// should never happen
 }
+
