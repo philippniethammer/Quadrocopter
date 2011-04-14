@@ -30,7 +30,8 @@ void initializeMotors(void){
 
 	// setting Pins as output
 	DDRB |= (1 << PB3);
-	DDRD |= ((1 << PD4) || (1 << PD5) || (1 << PD7));
+	DDRD |= (1 << PD4) | (1 << PD5) | (1 << PD7);
+
 
 
 	// set initial value of output compare = 0
@@ -47,10 +48,10 @@ void initializeMotors(void){
 	 * up-counting. Clear OC0 on Compare Match when down-counting.)
 	 * (WGM01:0 = 1 => PWM)
 	 * counter/timer0 and counter/timer 2 are inverted
-	 * prescaler 1024:
-	 * (CS02:1:0 = 5 (CS02 = 1, CS00 = 1)
+	 * prescaler 256:
+	 * (CS02:1:0 = 5, CS02 = 1, CS00 = 1)
 	 */
-	TCCR0 |= ((1 << COM00) || (1 << COM01) || (1 << WGM00) || (1 << CS00) || (1 << CS02));
+	TCCR0 |= ((1 << COM00) | (1 << COM01) | (1 << WGM00) | (1 << CS02));
 
 
 	/*
@@ -58,15 +59,15 @@ void initializeMotors(void){
 	 * same as counter 0 but extra definition as 8 bit
 	 * and non-inverted (setting when downcounting, clearing when upcounting)
 	 */
-	TCCR1A |= ((1 << COM1A1) || (1 << COM1B1) || (1 << WGM10));
-	TCCR1B |= ((1 << CS12) || (1 << CS10));
+	TCCR1A |= ((1 << COM1A1) | (1 << COM1B1) | (1 << WGM10));
+	TCCR1B |= (1 << CS12);
 
 
 
 	/*
 	 * set counter 2 just like counter 0
 	 */
-	TCCR2 |= ((1 << COM20) || (1 << COM21) || (1 << WGM20) || (1 << CS20) || (1 << CS22));
+	TCCR2 |= ((1 << COM20) | (1 << COM21) | (1 << WGM20) | (1 << CS22));
 
 }
 
