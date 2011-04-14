@@ -7,6 +7,7 @@
  */
 
 #include "motors.h"
+#include "util/delay.h"
 
 
 /*
@@ -19,6 +20,11 @@ void initializeAll(void){
 
 }
 
+void delay_ms(int length) {
+	for (int i=0; i<length; i++) {
+		_delay_ms(1.0);
+	}
+}
 
 
 int main(void)
@@ -29,7 +35,14 @@ int main(void)
 
     while (1)
     {
-        __asm__ volatile("nop");		// so the endless loop isn't optimized away
+    	//Motor PWM testing.
+        for (int i = 0; i < 255; i++) {
+        	setMotorBack(255-i);
+        	setMotorFront(255-i);
+        	setMotorLeft(i);
+        	setMotorRight(i);
+        	delay_ms(500);
+        }
     }
 
     return (1);	// should never happen
