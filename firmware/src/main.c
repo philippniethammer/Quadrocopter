@@ -6,17 +6,18 @@
  *      last edited by AlKi 13. 04. 2011
  */
 
+#include <util/delay.h>
 #include "motors.h"
-#include "util/delay.h"
+#include "sensors.h"
 
 
 /*
- * executing startuproutines
+ * executing startup routines
  * executes all initializations and routines needed to *boot*
  */
 void initializeAll(void){
 	initializeMotors();
-
+	Sensors_Init();
 
 }
 
