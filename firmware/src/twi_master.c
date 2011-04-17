@@ -143,7 +143,8 @@ uint8_t TWIM_Init(uint32_t TWI_Bitrate) {
 	/*
 	 ** Set TWI bitrate
 	 ** If bitrate is too high, then error return
-	 */TWBR = ((F_CPU / TWI_Bitrate) - 16) / 2;
+	 */
+	TWBR = ((F_CPU / TWI_Bitrate) - 16) / 2;
 	if (TWBR < 11)
 		return 0;
 
@@ -216,7 +217,8 @@ uint8_t TWIM_Start(uint8_t Address, uint8_t TWIM_Type) {
 void TWIM_Stop(void) {
 	/*
 	 ** Send stop condition
-	 */TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
+	 */
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 	/*
 	 ** Wait until stop condition is executed and bus released
 	 */
@@ -262,8 +264,10 @@ uint8_t TWIM_SetRegister(uint8_t deviceAddr, uint8_t regAddr, uint8_t byte) {
 	if (TWIM_Start(deviceAddr, TWIM_WRITE) != 1
 		|| TWIM_Write(regAddr) != 1
 		|| TWIM_Write(byte) != 1) {
+		TWIM_Stop();
 		return 0;
 	}
+	TWIM_Stop();
 	return 1;
 }
 
