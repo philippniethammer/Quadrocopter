@@ -16,6 +16,8 @@ extern void fifo_init(fifo_t*, uint8_t* buf, const uint8_t size);
 extern uint8_t fifo_put(fifo_t*, const uint8_t data);
 extern uint8_t fifo_get_wait(fifo_t*);
 extern int fifo_get_nowait(fifo_t*);
+extern uint8_t fifo_isFull(fifo_t*);
+extern uint8_t fifo_isEmpty(fifo_t*);
 
 static inline uint8_t _inline_fifo_put(fifo_t *f, const uint8_t data) {
 	if (f->count >= f->size)

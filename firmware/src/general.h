@@ -14,6 +14,7 @@
 
 #define TWI_FREQ 100000
 #define SENSOR_ACC_ADDRESS 0x1D
+#define USART_BAUD 9600
 
 void delay_ms(int length);
 

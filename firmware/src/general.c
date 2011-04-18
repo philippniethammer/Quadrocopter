@@ -19,11 +19,12 @@ void delay_ms(int length) {
 void debug_blink(uint8_t times) {
 	uint8_t tmp;
 	tmp = getMotorvalueBack();
-	for (int i=1; i < times; i++) {
+	for (int i=0; i < times; i++) {
 		setMotorBack(255);
 		delay_ms(500);
 		setMotorBack(0);
 		delay_ms(500);
 	}
+	delay_ms(500);
 	setMotorBack(tmp);
 }

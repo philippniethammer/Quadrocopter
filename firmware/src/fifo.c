@@ -25,3 +25,13 @@ int fifo_get_nowait (fifo_t *f)
 
 	return (int) _inline_fifo_get (f);
 }
+
+uint8_t fifo_isFull(fifo_t *f)
+{
+	return (f->count >= f->size);
+}
+
+uint8_t fifo_isEmpty(fifo_t *f)
+{
+	return (f->count == 0);
+}
