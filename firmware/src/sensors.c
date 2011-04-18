@@ -49,13 +49,13 @@ uint8_t Sensors_AccPullData() {
 	uint8_t status;
 
 	//tell acc the right register.
-	if (!TWIM_Start(ACC_ADDRESS, TWIM_WRITE) || !TWIM_Write(0x00)) {
+	if (!TWIM_Start(ACC_ADDRESS, TW_WRITE) || !TWIM_Write(0x00)) {
 		TWIM_Stop();
 		return 0;
 	}
 
 	//get status.
-	if (!TWIM_Start(ACC_ADDRESS, TWIM_READ)) {
+	if (!TWIM_Start(ACC_ADDRESS, TW_READ)) {
 		TWIM_Stop();
 		return 0;
 	}
