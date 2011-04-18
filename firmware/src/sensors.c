@@ -5,12 +5,10 @@
  *      Author: philipp
  */
 
-#define TWI_FREQ 100000
-#define ACC_ADDRESS 0x1D
-
 #include <stdint.h>
 #include "twi_master.h"
 #include "sensors.h"
+#include "general.h"
 
 uint8_t acc_dataX = 0;
 uint8_t acc_dataY = 0;
@@ -25,10 +23,10 @@ uint8_t Sensors_Init() {
 }
 
 uint8_t Sensors_AccInit() {
-	if (!TWIM_SetRegister(ACC_ADDRESS, 0x2A, 0x07)) {
+	if (!TWIM_SetRegister(SENSOR_ACC_ADDRESS, 0x2A, 0x07)) {
 		return 0;
 	}
-	return TWIM_SetRegister(ACC_ADDRESS, 0x09, 0b01000000);
+	return TWIM_SetRegister(SENSOR_ACC_ADDRESS, 0x09, 0b01000000);
 }
 
 uint8_t Sensors_LoopStep() {
@@ -49,13 +47,13 @@ uint8_t Sensors_AccPullData() {
 	uint8_t status;
 
 	//tell acc the right register.
-	if (!TWIM_Start(ACC_ADDRESS, TW_WRITE) || !TWIM_Write(0x00)) {
+	if (!TWIM_Start(SENSOR_ACC_ADDRESS, TW_WRITE) || !TWIM_Write(0x00)) {
 		TWIM_Stop();
 		return 0;
 	}
 
 	//get status.
-	if (!TWIM_Start(ACC_ADDRESS, TW_READ)) {
+	if (!TWIM_Start(SENSOR_ACC_ADDRESS, TW_READ)) {
 		TWIM_Stop();
 		return 0;
 	}

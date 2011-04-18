@@ -1,5 +1,5 @@
 /*
- * motors.c
+ * motors.h
  *
  *  Created on: 08.04.2011
  *      Author: alki
@@ -16,121 +16,52 @@
  *  	Back:	PD7 (OC2)
  */
 
-#include <avr/io.h>
-#include <stdint.h>
-
-
+#ifndef MOTORS_H_
+#define MOTORS_H_
 /*
- * initializes the counters, the motor values (= 0) and starts the counters
+ * Initializes the counters, the motor values (= 0) and starts the counters
  * result: PWM with ON-time = 0%
- *
- * ==!!! to be tested !!!==
  */
-void initializeMotors(void){
-
-	// setting Pins as output
-	DDRB |= (1 << PB3);
-	DDRD |= (1 << PD4) | (1 << PD5) | (1 << PD7);
-
-
-
-	// set initial value of output compare = 0
-	OCR0 = 0xff; // since inverted
-	OCR1AL = 0;
-	OCR1BL = 0;
-	OCR2 = 0xff; // since inverted
-
-
-	/*
-	 * set counter 0
-	 * set PWM-mode + prescaler (and start counter by that)
-	 * (COM01:0 = 2 => Set OC0 on Compare Match when
-	 * up-counting. Clear OC0 on Compare Match when down-counting.)
-	 * (WGM01:0 = 1 => PWM)
-	 * counter/timer0 and counter/timer 2 are inverted
-	 * prescaler 256:
-	 * (CS02:1:0 = 5, CS02 = 1, CS00 = 1)
-	 */
-	TCCR0 |= ((1 << COM00) | (1 << COM01) | (1 << WGM00) | (1 << CS02));
-
-
-	/*
-	 * set  counter 1
-	 * same as counter 0 but extra definition as 8 bit
-	 * and non-inverted (setting when downcounting, clearing when upcounting)
-	 */
-	TCCR1A |= ((1 << COM1A1) | (1 << COM1B1) | (1 << WGM10));
-	TCCR1B |= (1 << CS12);
-
-
-
-	/*
-	 * set counter 2 just like counter 0
-	 */
-	TCCR2 |= ((1 << COM20) | (1 << COM21) | (1 << WGM20) | (1 << CS22));
-
-}
+void initializeMotors(void);
 
 /*
- * Left Motor on PB3 (OC0)
- * inverting value and setting OCR0 to it
+ * Set left motor.
  */
-void setMotorLeft(unsigned char speed){
-	OCR0 = 0xff - speed;
-}
+void setMotorLeft(uint8_t speed);
 
 /*
- * Right Motor on PD4 (OC1B)
- * setting OCR1BL to it
+ * Set right motor.
  */
-void setMotorRight(unsigned char speed){
-	OCR1BL = speed;
-}
+void setMotorRight(uint8_t speed);
 
 /*
- * Front Motor on PD5 (OC1A)
- * setting OCR1AL to it
+ * Set front motor.
  */
-void setMotorFront(unsigned char speed){
-	OCR1AL = speed;
-}
+void setMotorFront(uint8_t speed);
 
 /*
- * Back Motor on PD7 (OC2)
- * inverting value and setting OCR2 to it
+ * Set back motor.
  */
-void setMotorBack(unsigned char speed){
-	OCR2 = 0xff - speed;
-}
+void setMotorBack(uint8_t speed);
 
 /*
- * returning inverted value of OCR0;
+ * Get left motor value.
  */
-unsigned char getMotorvalueLeft(void){
-
-	return 0xff - OCR0;
-}
+uint8_t getMotorvalueLeft(void);
 
 /*
- * returning value of OCR1B low-byte
+ * Get right motor value.
  */
-unsigned char getMotorvalueRight(void){
-
-	return OCR1BL;
-}
+uint8_t getMotorvalueRight(void);
 
 /*
- * returning value of OCR1A low-byte
+ * Get front motor value.
  */
-unsigned char getMotorvalueFront(void){
-
-	return OCR1AL;
-}
+uint8_t getMotorvalueFront(void);
 
 /*
- * returning inverted value of OCR2;
+ * Get back motor value.
  */
-unsigned char getMotorvalueBack(void){
+uint8_t getMotorvalueBack(void);
 
-	return 0xff - OCR2;
-}
+#endif
