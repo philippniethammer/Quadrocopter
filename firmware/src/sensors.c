@@ -45,31 +45,32 @@ uint8_t Sensors_LoopStep() {
 	return 1;
 }
 
-void Sensors_AccPullData() {
+uint8_t Sensors_AccPullData() {
 	uint8_t status;
 
 	//tell acc the right register.
-	if (!TWIM_Start(ACC_ADDRESS, TWIM_WRITE)) {
+	if (!TWIM_Start(ACC_ADDRESS, TWIM_WRITE) || !TWIM_Write(0x00)) {
 		TWIM_Stop();
-		return;
+		return 0;
 	}
-	TWIM_Write(0x00);
 
 	//get status.
 	if (!TWIM_Start(ACC_ADDRESS, TWIM_READ)) {
 		TWIM_Stop();
-		return;
+		return 0;
 	}
 	status = TWIM_ReadAck();
 	if (!(status & 0b00111111)) {
 		TWIM_Stop();
-		return;
+		return 1;
 	}
 
 	acc_dataX = TWIM_ReadAck();
 	acc_dataY = TWIM_ReadAck();
 	acc_dataZ = TWIM_ReadNack();
 	TWIM_Stop();
+
+	return 1;
 }
 
 uint8_t Sensors_AccGetX() {

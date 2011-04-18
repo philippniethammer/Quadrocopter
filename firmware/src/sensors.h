@@ -13,7 +13,7 @@ uint8_t Sensors_Init();
 
 uint8_t Sensors_AccInit();
 
-void Sensors_AccPullData();
+uint8_t Sensors_AccPullData();
 
 uint8_t Sensors_AccGetX();
 uint8_t Sensors_AccGetY();
