@@ -5,6 +5,7 @@
  *      Author: philipp
  */
 
+#include <avr/io.h>
 #include <stdint.h>
 #include "general.h"
 #include "usart.h"
@@ -21,7 +22,10 @@ uint8_t command = 0;
 void SerialCom_init(void)
 {
 	USART_Init(UBRR);
-	debug_blink(4);
+	//XXX debug only
+	DDRA = 0xff;
+	debug_blink(2);
+	PORTA = UBRR;
 }
 
 void SerialCom_LoopStep(void)
@@ -32,16 +36,14 @@ void SerialCom_LoopStep(void)
 		debug_blink(3);
 	} else {
 		if (status & USART_STATUS_DATA_AVAILABLE) {
-			debug_blink(2);
 			command = USART_getc();
-
+			setMotorFront(command);
 				switch (command) {
 				case SER_COMMAND_BLINK:
 					debug_blink(1);
 					command = 0;
 					break;
 				}
-
 		}
 	}
 }

@@ -5,6 +5,7 @@
  *      Author: philipp
  */
 
+#include <avr/io.h>
 #include <stdint.h>
 #include "general.h"
 #include "fifo.h"
@@ -89,9 +90,9 @@ uint8_t USART_putc(uint8_t byte)
  *
  * Returns -1 if fifo is empty.
  */
-int USART_getc(void)
+uint8_t USART_getc(void)
 {
-	return fifo_get_nowait(&fifo_r);
+	return fifo_get_wait(&fifo_r);
 }
 
 /**
@@ -104,7 +105,6 @@ uint8_t USART_LoopStep(void)
 	//send next char from fifo if ready.
 	if (!fifo_isEmpty(&fifo_w) && USART_transmitReady()) {
 		USART_transmit((uint8_t) fifo_get_wait(&fifo_w));
-		debug_blink(1);
 	}
 	//receive next char from USART.
 	if (USART_receiveReady()) {

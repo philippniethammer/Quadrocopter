@@ -33,7 +33,7 @@ uint8_t USART_putc(uint8_t byte);
  *
  * returns -1 if no data is availible.
  */
-int USART_getc(void);
+uint8_t USART_getc(void);
 
 /**
  * Step for main loop.

@@ -6,6 +6,7 @@
  */
 
 
+#include <avr/io.h>
 #include <util/delay.h>
 #include "motors.h"
 #include "general.h"
@@ -18,13 +19,13 @@ void delay_ms(int length) {
 
 void debug_blink(uint8_t times) {
 	uint8_t tmp;
-	tmp = getMotorvalueBack();
+	tmp = PORTA;
 	for (int i=0; i < times; i++) {
-		setMotorBack(255);
-		delay_ms(500);
-		setMotorBack(0);
-		delay_ms(500);
+		PORTA = 0xff;
+		delay_ms(200);
+		PORTA = 0x00;
+		delay_ms(200);
 	}
-	delay_ms(500);
-	setMotorBack(tmp);
+	delay_ms(200);
+	PORTA = tmp;
 }

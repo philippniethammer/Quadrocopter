@@ -6,6 +6,8 @@
  *      last edited by AlKi 13. 04. 2011
  */
 
+#include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include "motors.h"
@@ -14,6 +16,9 @@
 #include "serialcom.h"
 #include "usart.h"
 
+#define ENABLE_USART 1
+#define ENABLE_SENSORS 1
+
 /*
  * executing startup routines
  * executes all initializations and routines needed to *boot*
@@ -21,11 +26,12 @@
 void initializeAll(void){
 	initializeMotors();
 	SerialCom_init();
-	/*
+
+	/**
 	if (!Sensors_Init()) {
 		debug_blink(2);
-	}
-	*/
+	}*/
+
 
 }
 
@@ -33,8 +39,16 @@ void initializeAll(void){
 int main(void)
 {
 
+	DDRA = 0xff;
+
+	delay_ms(1000);
+
+	debug_blink(3);
+
 	initializeAll();
 	uint8_t count = 0;
+
+	setMotorBack(128);
 
     while (1)
     {
@@ -42,16 +56,13 @@ int main(void)
 
     	//Motor PWM testing.
 
-		for (int i = 0; i < 255; i++) {
-			setMotorFront(255-i);
-			setMotorLeft(i);
-			setMotorRight(i);
-		}
 		if (count == 0) {
 			USART_transmit(0x88);
 		}
     	count++;
-        /*
+
+
+    	/**
     	// Acc testing.
     	if (!Sensors_AccPullData()) {
     		debug_blink(3);
@@ -60,6 +71,7 @@ int main(void)
     	setMotorLeft(128 + Sensors_AccGetY());
     	setMotorRight(128 + Sensors_AccGetZ());
     	*/
+
     }
 
     return (1);	// should never happen

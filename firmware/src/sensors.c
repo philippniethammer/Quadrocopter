@@ -26,7 +26,7 @@ uint8_t Sensors_AccInit() {
 	if (!TWIM_SetRegister(SENSOR_ACC_ADDRESS, 0x2A, 0x07)) {
 		return 0;
 	}
-	return TWIM_SetRegister(SENSOR_ACC_ADDRESS, 0x09, 0b01000000);
+	return TWIM_SetRegister(SENSOR_ACC_ADDRESS, 0x09, 0b00000000);
 }
 
 uint8_t Sensors_LoopStep() {
@@ -58,7 +58,8 @@ uint8_t Sensors_AccPullData() {
 		return 0;
 	}
 	status = TWIM_ReadAck();
-	if (!(status & 0b00111111)) {
+	if (!(status & 0x08)) {
+		TWIM_ReadNack();
 		TWIM_Stop();
 		return 1;
 	}
@@ -67,6 +68,9 @@ uint8_t Sensors_AccPullData() {
 	acc_dataY = TWIM_ReadAck();
 	acc_dataZ = TWIM_ReadNack();
 	TWIM_Stop();
+
+	//XXX debug only
+	PORTA = acc_dataZ;
 
 	return 1;
 }
