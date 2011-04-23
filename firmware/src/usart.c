@@ -95,7 +95,7 @@ uint8_t USART_getc(void)
 	return fifo_get_wait(&fifo_r);
 }
 
-uint8_t USART_getRBufferLength()
+uint8_t USART_getRBufferLength(void)
 {
 	return fifo_r.count;
 }

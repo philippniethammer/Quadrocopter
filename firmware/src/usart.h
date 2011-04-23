@@ -36,6 +36,11 @@ uint8_t USART_putc(uint8_t byte);
 uint8_t USART_getc(void);
 
 /**
+ * Get length of receive buffer.
+ */
+uint8_t USART_getRBufferLength(void);
+
+/**
  * Step for main loop.
  */
 uint8_t USART_LoopStep(void);
