@@ -95,6 +95,11 @@ uint8_t USART_getc(void)
 	return fifo_get_wait(&fifo_r);
 }
 
+uint8_t USART_getRBufferLength()
+{
+	return fifo_r.count;
+}
+
 /**
  * Step for main loop.
  */
@@ -113,8 +118,10 @@ uint8_t USART_LoopStep(void)
 			status &= USART_STATUS_ERROR;
 		} else {
 			fifo_put(&fifo_r, USART_receive());
-			status |= USART_STATUS_DATA_AVAILABLE;
 		}
+	}
+	if (!fifo_isEmpty(&fifo_r)) {
+		status |= USART_STATUS_DATA_AVAILABLE;
 	}
 
 	return status;

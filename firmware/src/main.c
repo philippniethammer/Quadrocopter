@@ -25,13 +25,15 @@
  */
 void initializeAll(void){
 	initializeMotors();
+#if (ENABLE_USART == 1)
 	SerialCom_init();
+#endif
 
-	/**
+#if (ENABLE_SENSORS == 1)
 	if (!Sensors_Init()) {
 		debug_blink(2);
-	}*/
-
+	}
+#endif
 
 }
 
@@ -41,36 +43,22 @@ int main(void)
 
 	DDRA = 0xff;
 
-	delay_ms(1000);
-
-	debug_blink(3);
-
 	initializeAll();
-	uint8_t count = 0;
 
 	setMotorBack(128);
 
     while (1)
     {
+#if (ENABLE_USART == 1)
     	SerialCom_LoopStep();
+#endif
 
-    	//Motor PWM testing.
-
-		if (count == 0) {
-			USART_transmit(0x88);
-		}
-    	count++;
-
-
-    	/**
+#if (ENABLE_SENSORS == 1)
     	// Acc testing.
     	if (!Sensors_AccPullData()) {
     		debug_blink(3);
     	}
-    	setMotorFront(128 + Sensors_AccGetX());
-    	setMotorLeft(128 + Sensors_AccGetY());
-    	setMotorRight(128 + Sensors_AccGetZ());
-    	*/
+#endif
 
     }
 
