@@ -1,0 +1,24 @@
+ 
+Mainboard:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Treiber:
+
+Daten via I2C, softwaremäßig
