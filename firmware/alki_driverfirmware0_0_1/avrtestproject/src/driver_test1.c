@@ -55,9 +55,9 @@
 // actual on-clocks: motorX_ratio+MOTORMINPWMFACTOR
 #define MOTORMINPWMFACTOR 256 - 100
 
-#define MOTORCOUNTERMAX 1000 //65500
+#define MOTORCOUNTERMAX 4000
 #define MOTORCOUNTERMIN 200
-#define MOTORCOUNTERSTEP 50
+#define MOTORCOUNTERSTEP 10
 
 #define MOTOROFFDELAYSTEPS 25 // steps to wait for the FETs to turn off
 // max. difference of phase-voltage to common-voltage for triggering a commutation
@@ -78,6 +78,7 @@ static uint16_t motor1_counter = 0;
 static uint16_t motor1_counter_max = MOTORCOUNTERMAX;
 static uint16_t motor2_counter = 0;
 static uint16_t motor2_counter_max = MOTORCOUNTERMAX;
+static uint16_t motor2_startcounter = 0;
 
 // ratio of motorpower
 uint8_t motor1_ratio = 0;
@@ -129,13 +130,12 @@ void initializeMotors() {
 	// initialize interrupts used for motor-PWM
 
 	// TIMER0
-	// TODO TCCR0 |= (1 << CS01); // start timer0 by setting prescaler, prescaler = 8
+	TCCR0 |= (1 << CS01); // start timer0 by setting prescaler, prescaler = 8
 	TCNT0 = 0;
 
 	// TIMER2
-	// TODO TCCR2 |= (1 << CS01); // start timer2 by setting prescaler, prescaler = 8
+	TCCR2 |= (1 << CS01); // start timer2 by setting prescaler, prescaler = 8
 	TCNT2 = 0;
-
 
 	// initialize timer1 for commutation-computing
 	TCCR1B |= (1 << CS11); // prescaler = 8
@@ -215,8 +215,8 @@ void motor1_turn(void) {
 	// turn off all motor connections
 	MOTOR1_OFF;
 	/*for (uint8_t i = 0; i < MOTOROFFDELAYSTEPS; i++) {
-		asm volatile ("nop");
-	}*/
+	 asm volatile ("nop");
+	 }*/
 	if (motor1_forward) {
 		switch (motor1_status) {
 		case 0: {
@@ -308,8 +308,8 @@ void motor2_turn(void) {
 	MOTOR2_OFF;
 
 	/*for (uint8_t i = 0; i < MOTOROFFDELAYSTEPS; i++) {
-		asm volatile ("nop");
-	}*/
+	 asm volatile ("nop");
+	 }*/
 	if (motor2_forward) {
 		switch (motor2_status) {
 		case 0: {
@@ -413,10 +413,19 @@ void motor2_setratio(uint8_t ratio) {
 	}
 }
 
+uint8_t getTimeDelta(uint8_t ago, uint8_t now) {
+	if (now >= ago) {
+		return now - ago;
+	} else {
+		return UINT8_MAX - ago + now;
+	}
+}
+
 // ====================== INTERUPT ROUTINES ================================
 
 // Timer 0 overflow (for motor1 pwm)
-ISR( TIMER0_OVF_vect ) {
+ISR( TIMER0_OVF_vect )
+{
 	// disable interrupts
 	cli();
 	if (motor1_ratio > 0) {
@@ -445,7 +454,8 @@ ISR( TIMER0_OVF_vect ) {
 }
 
 // Timer 2 overflow (for motor2 pwm
-ISR( TIMER2_OVF_vect ) {
+ISR( TIMER2_OVF_vect )
+{
 	// disable interrupts
 	cli();
 	if (motor2_ratio > 0) {
@@ -480,7 +490,7 @@ ISR( TIMER2_OVF_vect ) {
 int main(void) {
 
 	initializeMotors(); // for safety reasons first!
-	//initADC();
+	initADC();
 
 #if TESTMODE == TRUE
 	//motor1_ratio = 200; // motor1 is the one with a jumper
@@ -488,171 +498,34 @@ int main(void) {
 	//motor2_forward = false;
 
 	// TODO
-	while (true) {
+	/*while (true) {
 	 for (uint16_t i = 0; i < 6550; i++) {
-		 for (uint16_t i = 0; i < 5; i++) {
-		 	 	 asm volatile ("nop");
-		 	 }
+	 for (uint16_t i = 0; i < 5; i++) {
+	 asm volatile ("nop");
+	 }
 	 }
 	 motor2_turn();
-	}
+	 }*/
 #endif
 
 	// finally turn on interrupts
 	sei();
+
+	uint16_t switchint = 200;
 	while (1) {
 
-		// work on motor1
-		if ((motor1_ratio > 0) && (motor1_started)) {
-
-			ADMUX = 6; // ADC6
-			ADCSR |= ADSC; // start converting motor1 common
-			while (ADCSR & (ADSC)) {
-				asm volatile ("nop");
-			}
-			// conversion complete, start next conversion and save last result
-			motor1_common_adc = ADC;
-			switch (motor1_status) {
-			case 0:
-				// phase 2 (ADC0)
-				ADMUX = 0;
-				break;
-			case 1:
-				// phase 3 (ADC7)
-				ADMUX = 7;
-				break;
-			case 2:
-				// phase 1 (ADC1)
-				ADMUX = 1;
-				break;
-			case 3:
-				// phase 2 (ADC0)
-				ADMUX = 0;
-				break;
-			case 4:
-				// phase 3 (ADC7)
-				ADMUX = 7;
-				break;
-			case 5:
-				// phase 1 (ADC1)
-				ADMUX = 1;
-				break;
-			}
-			ADCSR |= ADSC;
-			// wait until conversion completes
-			while (ADCSR & (ADSC)) {
-				asm volatile ("nop");
-			}
-			motor1_counter++;
-
-			// conversion complete, save result
-			motor1_phase_adc = ADC;
-
-			// TODO: compare results and turn motor1 if ready
-
-#if SWITCHFUNCTION == 1
-			// prototype 1:
-			int phasemaxvalue = 0;
-			int phaseminvalue = 0;
-
-			phasemaxvalue = motor1_phase_adc + MOTORADCDIFF;
-
-			// handle potential 'underflow'
-			if ((motor1_common_adc - MOTORADCDIFF) > motor1_common_adc) {
-				phaseminvalue = 0;
-			} else {
-				phaseminvalue = motor1_common_adc - MOTORADCDIFF;
-			}
-
-			if ((motor1_phase_adc < phasemaxvalue)
-					&& (motor1_phase_adc > phasemaxvalue)) {
-				// comutate motor1 if ready
-				motor1_turn();
-			}
-
-#elif SWITCHFUNCTION == 2
-			// prototype 2:
-			switch (motor1_lastadcstatus) {
-			case 0:
-				if (motor1_phase_adc > motor1_common_adc) {
-					motor1_lastadcstatus = 1;
-				} else {
-					motor1_lastadcstatus = 2;
-				}
-				break;
-			case 1:
-				if (motor1_phase_adc <= motor1_common_adc) {
-					motor1_zerotime = TCNT1;
-					motor1_switchtime = motor1_zerotime
-							+ (motor1_zerotime - motor1_lastswitchtime); // zerotime + time taken to zero-crossing
-
-					if (motor1_switchtime < motor1_zerotime) { // overflow happened
-						motor1_lastadcstatus = 3;
-					} else {
-						motor1_lastadcstatus = 4;
-					}
-				}
-				break;
-			case 2:
-				if (motor1_phase_adc > motor1_common_adc) {
-					motor1_zerotime = TCNT1;
-					motor1_switchtime = motor1_zerotime
-							+ (motor1_zerotime - motor1_lastswitchtime); // zerotime + time taken to zero-crossing
-					if (motor1_switchtime < motor1_zerotime) { // overflow happened
-						motor1_lastadcstatus = 3;
-					} else {
-						motor1_lastadcstatus = 4;
-					}
-				}
-				break;
-			case 3:
-				if ((TCNT1 > motor1_switchtime) && (TCNT1 < motor1_zerotime)) {
-					motor1_turn();
-					motor1_lastswitchtime = TCNT1;
-					motor1_lastadcstatus = 0;
-				}
-				break;
-			case 4:
-				if(TCNT1 > motor1_switchtime){
-					motor1_turn();
-					motor1_lastswitchtime = TCNT1;
-					motor1_lastadcstatus = 0;
-				}
-				break;
-			default:
-				break;
-			}
-
-#endif
-			// if motor1 not yet fast enough: drive it blindly
-		} else if (motor1_ratio > 0) {
-
-			if (motor1_counter > motor1_counter_max) {
-				motor1_counter_max = motor1_counter_max - MOTORCOUNTERSTEP;
-				motor1_counter = 0;
-				motor1_turn();
-				if (motor1_counter < MOTORCOUNTERMIN) {
-					// get actual value of timer/counter1
-					motor1_switchtime = TCNT1;
-					motor1_counter_max = MOTORCOUNTERMAX;
-					motor1_started = 1;
-				}
-			}
-
-			motor1_counter++;
-		}
-
-
 		// work on motor2 =======================================
-		if (motor2_ratio > 0) {
+		if (motor2_ratio > 0 && motor2_started) {
 
+			/*
 			ADMUX = 2; // ADC2
-			ADCSR |= ADSC; // start converting motor2 common
-			while (ADCSR & (ADSC)) {
+			ADCSR |= (1<<ADSC); // start converting motor2 common
+			while (ADCSR & (1<<ADSC)) {
 				asm volatile ("nop");
 			}
 			// conversion complete, start next conversion and save last result
 			motor2_common_adc = ADC;
+			*/
 			switch (motor2_status) {
 			case 0:
 				// phase 2 (ADC4)
@@ -679,9 +552,9 @@ int main(void) {
 				ADMUX = 5;
 				break;
 			}
-			ADCSR |= ADSC; // start conversion
+			ADCSR |= (1<<ADSC); // start conversion
 			// wait until conversion completes
-			while (ADCSR & (ADSC)) {
+			while (ADCSR & (1<<ADSC)) {
 				asm volatile ("nop");
 			}
 
@@ -717,68 +590,120 @@ int main(void) {
 			// prototype 2:
 			switch (motor2_lastadcstatus) {
 			case 0:
-							if (motor2_phase_adc > motor2_common_adc) {
-								motor2_lastadcstatus = 1;
-							} else {
-								motor2_lastadcstatus = 2;
-							}
-							break;
-						case 1:
-							if (motor2_phase_adc <= motor2_common_adc) {
-								motor2_zerotime = TCNT1;
-								motor2_lastswitchtime = motor2_switchtime;
-								motor2_switchtime = motor2_zerotime
-										+ (motor2_zerotime - motor2_lastswitchtime); // zerotime + time taken to zero-crossin
-								if (motor2_switchtime < motor2_zerotime) { // overflow happened
-									motor2_lastadcstatus = 3;
-								} else {
-									motor2_lastadcstatus = 4;
-								}
-							}
-							break;
-						case 2:
-							if (motor2_phase_adc > motor2_common_adc) {
-								motor2_zerotime = TCNT1;
-								motor2_lastswitchtime = motor2_switchtime;
-								motor2_switchtime = motor2_zerotime
-										+ (motor2_zerotime - motor2_lastswitchtime); // zerotime + time taken to zero-crossing
-								if (motor2_switchtime < motor2_zerotime) { // overflow happened
-									motor2_lastadcstatus = 3;
-								} else {
-									motor2_lastadcstatus = 4;
-								}
-							}
-							break;
-						case 3:
-							if ((TCNT1 > motor2_switchtime) && (TCNT1 < motor2_zerotime)) {
-								motor2_turn();
-								motor2_lastswitchtime = TCNT1;
-								motor2_lastadcstatus = 0;
-							}
-							break;
-						case 4:
-							if(TCNT1 > motor2_switchtime){
-								motor2_turn();
-								motor2_lastswitchtime = TCNT1;
-								motor2_lastadcstatus = 0;
-							}
-							break;
-						default:
-							break;
-						}
+				if (motor2_phase_adc >= switchint/2) {
+					switchint = motor2_phase_adc;
+					motor2_lastadcstatus = 1;
+				} else {
+					motor2_lastadcstatus = 2;
+				}
+				break;
+			case 1:
+				if (motor2_phase_adc <= switchint) {
+					motor2_turn();
+					motor2_lastadcstatus = 0;
+					/*motor2_zerotime = TCNT1;
+					motor2_lastswitchtime = motor2_switchtime;
+					motor2_switchtime = motor2_zerotime
+							+ getTimeDelta(motor1_lastswitchtime, motor1_zerotime); // zerotime + time taken to zero-crossin
+					if (motor2_switchtime < motor2_zerotime) { // overflow happened
+						motor2_lastadcstatus = 3;
+					} else {
+						motor2_lastadcstatus = 4;
+					}*/
+				}
+				break;
+			case 2:
+				if (motor2_phase_adc >= switchint) {
+					switchint = motor2_phase_adc;
+					motor2_turn();
+					motor2_lastadcstatus = 0;
+					/*
+					motor2_zerotime = TCNT1;
+					motor2_lastswitchtime = motor2_switchtime;
+					motor2_switchtime = motor2_zerotime
+							+ getTimeDelta(motor1_lastswitchtime, motor1_zerotime); // zerotime + time taken to zero-crossing
+					if (motor2_switchtime < motor2_zerotime) { // overflow happened
+						motor2_lastadcstatus = 3;
+					} else {
+						motor2_lastadcstatus = 4;
+					}*/
+				}
+				break;
+			case 3:
+				if ((TCNT1 >= motor2_switchtime) && (TCNT1 < motor2_zerotime)) {
+					motor2_turn();
+					motor2_lastswitchtime = TCNT1;
+					motor2_lastadcstatus = 0;
+				}
+				break;
+			case 4:
+				if (TCNT1 >= motor2_switchtime) {
+					motor2_turn();
+					motor2_lastswitchtime = TCNT1;
+					motor2_lastadcstatus = 0;
+				}
+				break;
+			default:
+				break;
+			}
 
 #endif
 			// if motor2 not yet fast enough: drive it blindly
 		} else if (motor2_ratio > 0) {
-
 			if (motor2_counter > motor2_counter_max) {
 				motor2_counter_max = motor2_counter_max - MOTORCOUNTERSTEP;
-				motor2_counter = 0;
 				motor2_turn();
 				if (motor2_counter < MOTORCOUNTERMIN) {
-					motor2_started = 1;
-					motor2_counter_max = MOTORCOUNTERMAX;
+					if (motor2_startcounter < 1000) {
+
+						switch (motor2_status) {
+						case 0:
+							// phase 2 (ADC4)
+							ADMUX = 4;
+							break;
+						case 1:
+							// phase 3 (ADC3)
+							ADMUX = 3;
+							break;
+						case 2:
+							// phase 1 (ADC5)
+							ADMUX = 5;
+							break;
+						case 3:
+							// phase 2 (ADC4)
+							ADMUX = 4;
+							break;
+						case 4:
+							// phase 3 (ADC3)
+							ADMUX = 3;
+							break;
+						case 5:
+							// phase 1 (ADC5)
+							ADMUX = 5;
+							break;
+						}
+						ADCSR |= (1<<ADSC); // start conversion
+						// wait until conversion completes
+						while (ADCSR & (1<<ADSC)) {
+							asm volatile ("nop");
+						}
+
+						// conversion complete, save result
+						uint16_t tmp = ADC;
+						if (tmp > switchint) {
+							switchint = tmp;
+						}
+
+
+
+						motor2_counter_max += MOTORCOUNTERSTEP;
+						motor2_startcounter++;
+					} else {
+						motor2_started = 1;
+						motor2_counter_max = MOTORCOUNTERMAX;
+					}
 				}
+				motor2_counter = 0;
 			}
 
 			motor2_counter++;
@@ -786,6 +711,6 @@ int main(void) {
 		}
 	}
 
-// just for the compiler, so "int main(void)" 'returns' some value
+	// just for the compiler, so "int main(void)" 'returns' some value
 	return 0;
 }

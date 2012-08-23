@@ -1,4 +1,4 @@
-#Fri Jun 15 07:54:32 CEST 2012
+#Thu Aug 23 22:34:59 CEST 2012
 avrtarget/ClockFrequency=8000000
 avrtarget/ExtRAMSize=0
 avrtarget/ExtendedRAM=false
@@ -11,6 +11,11 @@ avrtarget/avrdude/EEPROMFile=
 avrtarget/avrdude/EEPROMFromConfig=true
 avrtarget/avrdude/FlashFile=
 avrtarget/avrdude/FlashFromConfig=true
+avrtarget/avrdude/Fuses/ByteValues=-1\:-1
+avrtarget/avrdude/Fuses/FileName=${workspace_loc\:/avrtestproject/driverAVR.fuses}
+avrtarget/avrdude/Fuses/MCUid=atmega8
+avrtarget/avrdude/Fuses/UseFile=true
+avrtarget/avrdude/Fuses/Write=false
 avrtarget/avrdude/NoChipErase=false
 avrtarget/avrdude/NoSigCheck=false
 avrtarget/avrdude/NoVerify=false
