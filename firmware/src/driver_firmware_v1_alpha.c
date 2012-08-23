@@ -16,12 +16,17 @@
  *      PC6 - ADC
  *      PC7 - ADC
  *
- *      PB0 - motor1 coil 2 INVERTED! (PB0 = 0 => coil 2 = 11,1V)
- *      PB1 - motor1 coil 3 INVERTED! (PB1 = 0 => coil 3 = 11,1V)
+ *      PB0 - motor1 coil 2 11,1V (PB0 = 1 => coil 2 = 11,1V)
+ *      PB1 - motor1 coil 3 11,1V (PB1 = 1 => coil 3 = 11,1V)
  *      PB2 - motor1 coil 2 ground (PB2 = 1 => coil 2 grounded)
  *      PB3 - motor1 coil 3 ground (PB3 = 1 => coil 3 grounded)
  *      PB4 - free on isp-connector
  *      PB5 - free on isp-connector
+ *      PB6 - motor2 coil 2 ground (PB6 = 1 => coil 2 grounded)
+ *      PB7 - motor2 coil 2 11,1V (PB7 = 1 => coil 2 = 11,1V)
+ *
+ *      PD0 - motor2 coil 1 ground (PD0 = 0 => coil 1 grounded)
+ *      PD1 - motor2 coil 1 11,1V (PD1 = 1 => coil 1 = 11,1V)
  *
  */
 
