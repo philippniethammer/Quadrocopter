@@ -55,7 +55,7 @@
 // actual on-clocks: motorX_ratio+MOTORMINPWMFACTOR
 #define MOTORMINPWMFACTOR 256 - 100
 
-#define MOTORCOUNTERMAX 4000
+#define MOTORCOUNTERMAX 2000
 #define MOTORCOUNTERMIN 200
 #define MOTORCOUNTERSTEP 10
 
@@ -64,6 +64,14 @@
 #define MOTORADCDIFF 15
 
 //================ initializing variables ===================
+
+static bool motor2_adcIgnore = false;
+
+static uint16_t motor2_maxadc = 0;
+static uint16_t motor2_minadc = UINT16_MAX;
+
+static uint16_t motor2_switch = 100;
+static uint8_t motor2_triggerComm = 0;
 
 // states of the motors (0 to 2 [or 5])
 static uint8_t motor1_status = 0;
@@ -421,7 +429,130 @@ uint8_t getTimeDelta(uint8_t ago, uint8_t now) {
 	}
 }
 
+void motor2_switchADCChannel(uint8_t status) {
+	while (status > 5) {
+		status -= 6;
+	}
+	switch (status) {
+		case 0:
+			// phase 2 (ADC4)
+			ADMUX = 4;
+			break;
+		case 1:
+			// phase 3 (ADC3)
+			ADMUX = 3;
+			break;
+		case 2:
+			// phase 1 (ADC5)
+			ADMUX = 5;
+			break;
+		case 3:
+			// phase 2 (ADC4)
+			ADMUX = 4;
+			break;
+		case 4:
+			// phase 3 (ADC3)
+			ADMUX = 3;
+			break;
+		case 5:
+			// phase 1 (ADC5)
+			ADMUX = 5;
+			break;
+		}
+}
+
+
+void motor2_startup() {
+	if (motor2_counter > motor2_counter_max) {
+		motor2_counter_max = motor2_counter_max - MOTORCOUNTERSTEP;
+		motor2_lastswitchtime = TCNT1;
+		motor2_turn();
+		motor2_switchADCChannel(motor2_status);
+		//motor2_adcIgnore = true;
+		if (motor2_counter < MOTORCOUNTERMIN) {
+			if (motor2_startcounter < 1000) {
+				motor2_counter_max += MOTORCOUNTERSTEP;
+				motor2_startcounter++;
+			} else {
+				motor2_startcounter = 0;
+				//motor2_switch = (motor2_maxadc+motor2_minadc)/2;
+				motor2_started = 1;
+				motor2_counter_max = MOTORCOUNTERMAX;
+			}
+		}
+		motor2_counter = 0;
+	}
+
+	motor2_counter++;
+}
+
 // ====================== INTERUPT ROUTINES ================================
+
+ISR( ADC_vect )
+{
+
+	if (motor2_triggerComm || motor2_adcIgnore) {
+		uint16_t tmp = ADC;
+		motor2_adcIgnore = false;
+		return;
+	}
+
+	// lern mode
+	if (!motor2_started) {
+		uint16_t tmp = ADC;
+
+		if (tmp > motor2_maxadc) {
+			motor2_maxadc = tmp;
+		}
+		if (tmp < motor2_minadc) {
+			motor2_minadc = tmp;
+		}
+
+	} else {
+
+		// save result
+		motor2_phase_adc = ADC;
+
+		switch (motor2_lastadcstatus) {
+		case 0:
+			if (motor2_phase_adc >= motor2_switch) {
+
+				motor2_lastadcstatus = 1;
+			} else {
+				motor2_lastadcstatus = 2;
+			}
+			break;
+		case 1:
+			if (motor2_phase_adc <= motor2_switch) {
+
+				motor2_zerotime = TCNT1;
+				motor2_switchtime = motor2_zerotime + getTimeDelta(motor2_lastswitchtime, motor2_zerotime);
+				if (motor2_zerotime < motor2_switchtime) {
+					motor2_triggerComm = 1;
+				} else {
+					motor2_triggerComm = 2;
+				}
+				motor2_switchADCChannel(motor2_status+1);
+				motor2_lastadcstatus = 0;
+			}
+			break;
+		case 2:
+			if (motor2_phase_adc >= motor2_switch) {
+
+				motor2_zerotime = TCNT1;
+				motor2_switchtime = motor2_zerotime + getTimeDelta(motor2_lastswitchtime, motor2_zerotime);
+				if (motor2_zerotime < motor2_switchtime) {
+					motor2_triggerComm = 1;
+				} else {
+					motor2_triggerComm = 2;
+				}
+				motor2_switchADCChannel(motor2_status+1);
+				motor2_lastadcstatus = 0;
+			}
+			break;
+		}
+	}
+}
 
 // Timer 0 overflow (for motor1 pwm)
 ISR( TIMER0_OVF_vect )
@@ -511,48 +642,45 @@ int main(void) {
 	// finally turn on interrupts
 	sei();
 
+	/*while (true) {
+		if (motor2_ratio > 0 && motor2_started) {
+			if ((motor2_triggerComm == 1 || (motor2_triggerComm == 2 && TCNT1 < motor2_zerotime))
+					&& TCNT1 >= motor2_switchtime) {
+				motor2_lastswitchtime = TCNT1;
+				motor2_turn();
+				motor2_triggerComm = 0;
+			}
+		} else if (motor2_ratio > 0) { // start up.
+
+			motor2_startup();
+
+		}
+	}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	uint16_t switchint = 200;
 	while (1) {
 
 		// work on motor2 =======================================
 		if (motor2_ratio > 0 && motor2_started) {
 
-			/*
-			ADMUX = 2; // ADC2
-			ADCSR |= (1<<ADSC); // start converting motor2 common
-			while (ADCSR & (1<<ADSC)) {
-				asm volatile ("nop");
-			}
-			// conversion complete, start next conversion and save last result
-			motor2_common_adc = ADC;
-			*/
-			switch (motor2_status) {
-			case 0:
-				// phase 2 (ADC4)
-				ADMUX = 4;
-				break;
-			case 1:
-				// phase 3 (ADC3)
-				ADMUX = 3;
-				break;
-			case 2:
-				// phase 1 (ADC5)
-				ADMUX = 5;
-				break;
-			case 3:
-				// phase 2 (ADC4)
-				ADMUX = 4;
-				break;
-			case 4:
-				// phase 3 (ADC3)
-				ADMUX = 3;
-				break;
-			case 5:
-				// phase 1 (ADC5)
-				ADMUX = 5;
-				break;
-			}
+
+			motor2_switchADCChannel(motor2_status);
+
 			ADCSR |= (1<<ADSC); // start conversion
+
 			// wait until conversion completes
 			while (ADCSR & (1<<ADSC)) {
 				asm volatile ("nop");
@@ -560,8 +688,6 @@ int main(void) {
 
 			// conversion complete, save result
 			motor2_phase_adc = ADC;
-
-			// TODO: compare results and turn motor2 if ready
 
 #if SWITCHFUNCTION == 1
 
@@ -601,45 +727,13 @@ int main(void) {
 				if (motor2_phase_adc <= switchint) {
 					motor2_turn();
 					motor2_lastadcstatus = 0;
-					/*motor2_zerotime = TCNT1;
-					motor2_lastswitchtime = motor2_switchtime;
-					motor2_switchtime = motor2_zerotime
-							+ getTimeDelta(motor1_lastswitchtime, motor1_zerotime); // zerotime + time taken to zero-crossin
-					if (motor2_switchtime < motor2_zerotime) { // overflow happened
-						motor2_lastadcstatus = 3;
-					} else {
-						motor2_lastadcstatus = 4;
-					}*/
+
 				}
 				break;
 			case 2:
 				if (motor2_phase_adc >= switchint) {
 					switchint = motor2_phase_adc;
 					motor2_turn();
-					motor2_lastadcstatus = 0;
-					/*
-					motor2_zerotime = TCNT1;
-					motor2_lastswitchtime = motor2_switchtime;
-					motor2_switchtime = motor2_zerotime
-							+ getTimeDelta(motor1_lastswitchtime, motor1_zerotime); // zerotime + time taken to zero-crossing
-					if (motor2_switchtime < motor2_zerotime) { // overflow happened
-						motor2_lastadcstatus = 3;
-					} else {
-						motor2_lastadcstatus = 4;
-					}*/
-				}
-				break;
-			case 3:
-				if ((TCNT1 >= motor2_switchtime) && (TCNT1 < motor2_zerotime)) {
-					motor2_turn();
-					motor2_lastswitchtime = TCNT1;
-					motor2_lastadcstatus = 0;
-				}
-				break;
-			case 4:
-				if (TCNT1 >= motor2_switchtime) {
-					motor2_turn();
-					motor2_lastswitchtime = TCNT1;
 					motor2_lastadcstatus = 0;
 				}
 				break;
@@ -650,64 +744,7 @@ int main(void) {
 #endif
 			// if motor2 not yet fast enough: drive it blindly
 		} else if (motor2_ratio > 0) {
-			if (motor2_counter > motor2_counter_max) {
-				motor2_counter_max = motor2_counter_max - MOTORCOUNTERSTEP;
-				motor2_turn();
-				if (motor2_counter < MOTORCOUNTERMIN) {
-					if (motor2_startcounter < 1000) {
-
-						switch (motor2_status) {
-						case 0:
-							// phase 2 (ADC4)
-							ADMUX = 4;
-							break;
-						case 1:
-							// phase 3 (ADC3)
-							ADMUX = 3;
-							break;
-						case 2:
-							// phase 1 (ADC5)
-							ADMUX = 5;
-							break;
-						case 3:
-							// phase 2 (ADC4)
-							ADMUX = 4;
-							break;
-						case 4:
-							// phase 3 (ADC3)
-							ADMUX = 3;
-							break;
-						case 5:
-							// phase 1 (ADC5)
-							ADMUX = 5;
-							break;
-						}
-						ADCSR |= (1<<ADSC); // start conversion
-						// wait until conversion completes
-						while (ADCSR & (1<<ADSC)) {
-							asm volatile ("nop");
-						}
-
-						// conversion complete, save result
-						uint16_t tmp = ADC;
-						if (tmp > switchint) {
-							switchint = tmp;
-						}
-
-
-
-						motor2_counter_max += MOTORCOUNTERSTEP;
-						motor2_startcounter++;
-					} else {
-						motor2_started = 1;
-						motor2_counter_max = MOTORCOUNTERMAX;
-					}
-				}
-				motor2_counter = 0;
-			}
-
-			motor2_counter++;
-
+			motor2_startup();
 		}
 	}
 
