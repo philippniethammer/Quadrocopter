@@ -5,7 +5,7 @@ Archive member included because of file (symbol)
 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
                               ./src/driver_test1.o (__do_copy_data)
 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
-                              ./src/driver_test1.o (__do_clear_bss)
+                              ./src/SUART.o (__do_clear_bss)
 
 Memory Configuration
 
@@ -21,6 +21,7 @@ signature        0x0000000000840000 0x0000000000000400 rw !x
 Linker script and memory map
 
 LOAD /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
+LOAD ./src/SUART.o
 LOAD ./src/driver_test1.o
 LOAD /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a
 LOAD /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/libc.a
@@ -116,7 +117,7 @@ LOAD /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x0000000000000000      0x528
+.text           0x0000000000000000      0x582
  *(.vectors)
  .vectors       0x0000000000000000       0x26 /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
                 0x0000000000000000                __vectors
@@ -172,7 +173,6 @@ LOAD /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a
  *(.init9)
  *(.text)
  .text          0x000000000000005c        0x2 /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
-                0x000000000000005c                __vector_1
                 0x000000000000005c                __vector_12
                 0x000000000000005c                __bad_interrupt
                 0x000000000000005c                __vector_6
@@ -182,39 +182,43 @@ LOAD /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a
                 0x000000000000005c                __vector_17
                 0x000000000000005c                __vector_7
                 0x000000000000005c                __vector_5
+                0x000000000000005c                __vector_4
+                0x000000000000005c                __vector_9
                 0x000000000000005c                __vector_2
                 0x000000000000005c                __vector_15
                 0x000000000000005c                __vector_8
-                0x000000000000005c                __vector_14
                 0x000000000000005c                __vector_10
                 0x000000000000005c                __vector_16
                 0x000000000000005c                __vector_18
- .text          0x000000000000005e      0x4c6 ./src/driver_test1.o
-                0x000000000000005e                initADC
-                0x0000000000000070                initializeMotors
-                0x00000000000000a0                motor1_positive_on
-                0x00000000000000d4                motor2_positive_on
-                0x0000000000000108                motor1_turn
-                0x000000000000016e                motor2_turn
-                0x00000000000001d4                motor1_setratio
-                0x00000000000001f6                motor2_setratio
-                0x0000000000000218                getTimeDelta
-                0x000000000000022a                __vector_9
-                0x00000000000002b0                __vector_4
-                0x0000000000000342                main
- .text          0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
- .text          0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
- .text          0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
-                0x0000000000000524                . = ALIGN (0x2)
+ .text          0x000000000000005e      0x152 ./src/SUART.o
+                0x000000000000005e                __vector_1
+                0x00000000000000ac                SRI
+                0x0000000000000154                putChar
+                0x000000000000018a                suart_print
+ .text          0x00000000000001b0      0x3ce ./src/driver_test1.o
+                0x00000000000001b0                initADC
+                0x00000000000001be                initializeMotors
+                0x00000000000001e6                motor2_positive_on
+                0x000000000000021a                motor2_turn
+                0x0000000000000280                motor2_setratio
+                0x00000000000002a2                getTimeDelta
+                0x00000000000002b4                motor2_switchADCChannel
+                0x00000000000002e6                motor2_startup
+                0x00000000000003b2                __vector_14
+                0x000000000000051a                main
+ .text          0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+ .text          0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
+ .text          0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
+                0x000000000000057e                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
- .text.libgcc   0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
- .text.libgcc   0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
-                0x0000000000000524                . = ALIGN (0x2)
+ .text.libgcc   0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+ .text.libgcc   0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
+ .text.libgcc   0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
+                0x000000000000057e                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x0000000000000524        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
-                0x0000000000000524                exit
-                0x0000000000000524                _exit
+ .fini9         0x000000000000057e        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+                0x000000000000057e                exit
+                0x000000000000057e                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -233,50 +237,50 @@ LOAD /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x0000000000000524        0x4 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+ .fini0         0x000000000000057e        0x4 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
  *(.fini0)
-                0x0000000000000528                _etext = .
+                0x0000000000000582                _etext = .
 
-.data           0x0000000000800060        0x4 load address 0x0000000000000528
+.data           0x0000000000800060        0x6 load address 0x0000000000000582
                 0x0000000000800060                PROVIDE (__data_start, .)
  *(.data)
  .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
- .data          0x0000000000800060        0x4 ./src/driver_test1.o
- .data          0x0000000000800064        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
- .data          0x0000000000800064        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
- .data          0x0000000000800064        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
+ .data          0x0000000000800060        0x0 ./src/SUART.o
+ .data          0x0000000000800060        0x6 ./src/driver_test1.o
+ .data          0x0000000000800066        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+ .data          0x0000000000800066        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
+ .data          0x0000000000800066        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
  *(.data*)
  *(.rodata)
  *(.rodata*)
  *(.gnu.linkonce.d*)
-                0x0000000000800064                . = ALIGN (0x2)
-                0x0000000000800064                _edata = .
-                0x0000000000800064                PROVIDE (__data_end, .)
+                0x0000000000800066                . = ALIGN (0x2)
+                0x0000000000800066                _edata = .
+                0x0000000000800066                PROVIDE (__data_end, .)
 
-.bss            0x0000000000800064       0x12
-                0x0000000000800064                PROVIDE (__bss_start, .)
+.bss            0x0000000000800066       0x1a
+                0x0000000000800066                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x0000000000800064        0x0 /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
- .bss           0x0000000000800064       0x12 ./src/driver_test1.o
-                0x0000000000800064                motor1_ratio
-                0x0000000000800065                motor2_ratio
-                0x0000000000800066                motor1_started
-                0x0000000000800067                motor2_started
- .bss           0x0000000000800076        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
- .bss           0x0000000000800076        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
- .bss           0x0000000000800076        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
+ .bss           0x0000000000800066        0x0 /usr/lib/gcc/avr/4.5.3/../../../avr/lib/avr4/crtm8.o
+ .bss           0x0000000000800066        0x5 ./src/SUART.o
+ .bss           0x000000000080006b       0x15 ./src/driver_test1.o
+                0x000000000080006b                motor2_ratio
+                0x000000000080006c                motor2_started
+ .bss           0x0000000000800080        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_exit.o)
+ .bss           0x0000000000800080        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_copy_data.o)
+ .bss           0x0000000000800080        0x0 /usr/lib/gcc/avr/4.5.3/avr4/libgcc.a(_clear_bss.o)
  *(.bss*)
  *(COMMON)
-                0x0000000000800076                PROVIDE (__bss_end, .)
-                0x0000000000000528                __data_load_start = LOADADDR (.data)
-                0x000000000000052c                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x0000000000800080                PROVIDE (__bss_end, .)
+                0x0000000000000582                __data_load_start = LOADADDR (.data)
+                0x0000000000000588                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0000000000800076        0x0
-                0x0000000000800076                PROVIDE (__noinit_start, .)
+.noinit         0x0000000000800080        0x0
+                0x0000000000800080                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x0000000000800076                PROVIDE (__noinit_end, .)
-                0x0000000000800076                _end = .
-                0x0000000000800076                PROVIDE (__heap_start, .)
+                0x0000000000800080                PROVIDE (__noinit_end, .)
+                0x0000000000800080                _end = .
+                0x0000000000800080                PROVIDE (__heap_start, .)
 
 .eeprom         0x0000000000810000        0x0
  *(.eeprom*)

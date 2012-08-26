@@ -4,12 +4,15 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/SUART.c \
 ../src/driver_test1.c 
 
 OBJS += \
+./src/SUART.o \
 ./src/driver_test1.o 
 
 C_DEPS += \
+./src/SUART.d \
 ./src/driver_test1.d 
 
 

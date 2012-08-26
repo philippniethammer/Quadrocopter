@@ -47,7 +47,7 @@
 // =================== defining global static variables ===================
 
 #define TESTMODE TRUE
-#define SWITCHFUNCTION 2 // 1 => original " difference < X", 2 => switch greater <=> smaller
+
 // PWM-concerning
 // maximum off-clocks: 256
 // actual off-clocks: 256 - motorX_ratio
@@ -59,10 +59,6 @@
 #define MOTORCOUNTERMIN 200
 #define MOTORCOUNTERSTEP 10
 
-#define MOTOROFFDELAYSTEPS 25 // steps to wait for the FETs to turn off
-// max. difference of phase-voltage to common-voltage for triggering a commutation
-#define MOTORADCDIFF 15
-
 //================ initializing variables ===================
 
 static bool motor2_adcIgnore = false;
@@ -70,51 +66,35 @@ static bool motor2_adcIgnore = false;
 static uint16_t motor2_maxadc = 0;
 static uint16_t motor2_minadc = UINT16_MAX;
 
-static uint16_t motor2_switch = 100;
+static uint16_t motor2_switch = 300;
 static uint8_t motor2_triggerComm = 0;
 
 // states of the motors (0 to 2 [or 5])
-static uint8_t motor1_status = 0;
 static uint8_t motor2_status = 0;
 
 // direction: true => forward, false => backward
-static bool motor1_forward = true;
 static bool motor2_forward = true;
 
 // variables for driving motors blindly
-static uint16_t motor1_counter = 0;
-static uint16_t motor1_counter_max = MOTORCOUNTERMAX;
 static uint16_t motor2_counter = 0;
 static uint16_t motor2_counter_max = MOTORCOUNTERMAX;
 static uint16_t motor2_startcounter = 0;
 
 // ratio of motorpower
-uint8_t motor1_ratio = 0;
 uint8_t motor2_ratio = 0;
 
 // fast enough to use ADC?
-uint8_t motor1_started = 0;
 uint8_t motor2_started = 0;
 
 //variables for motor-pwm and adc
-static uint8_t motor1_pwm_status = 0; // 0 => actually off, 1 => actually on
-static uint8_t motor2_pwm_status = 0;
+static uint8_t motor2_pwm_status = 0;// 0 => actually off, 1 => actually on
 
 // for SWITCHFUNCTION 1
-static uint16_t motor1_common_adc = 0;
-static uint16_t motor1_phase_adc = 0;
-
 static uint16_t motor2_common_adc = 0;
 static uint16_t motor2_phase_adc = 0;
 
 // for SWITCHFUNCTION 2
-static uint8_t motor1_lastadcstatus = 0; // 0 => no old data available, 1 => phase > common, 2=> phase <= common
-static uint8_t motor2_lastadcstatus = 0;
-
-static uint16_t motor1_switchtime; // next time the motor has to be switched (counter 1 value)
-static uint16_t motor1_lastswitchtime; // last time the motor has to be switched (counter 1 value)
-static uint16_t motor1_lastswitchdelay; // clocks between last commutation and the commutation before
-static uint16_t motor1_zerotime;
+static uint8_t motor2_lastadcstatus = 0;// 0 => no old data available, 1 => phase > common, 2=> phase <= common
 
 static uint16_t motor2_switchtime;
 static uint16_t motor2_lastswitchtime;
@@ -142,8 +122,9 @@ void initializeMotors() {
 	TCNT0 = 0;
 
 	// TIMER2
-	TCCR2 |= (1 << CS01); // start timer2 by setting prescaler, prescaler = 8
-	TCNT2 = 0;
+	// FIXME Used for SUART
+	//TCCR2 |= (1 << CS01); // start timer2 by setting prescaler, prescaler = 8
+	//TCNT2 = 0;
 
 	// initialize timer1 for commutation-computing
 	TCCR1B |= (1 << CS11); // prescaler = 8
@@ -155,36 +136,6 @@ void initializeMotors() {
 
 // ======= subroutines =====================
 
-
-// turns back on the motor connections to V_Motor (position specific) of motor 1
-void motor1_positive_on(void) {
-	switch (motor1_status) {
-	case 1: {
-		MOTOR1_PHASE1_HIGH;
-		break;
-	}
-	case 2: {
-		MOTOR1_PHASE3_HIGH;
-		break;
-	}
-	case 3: {
-		MOTOR1_PHASE3_HIGH;
-		break;
-	}
-	case 4: {
-		MOTOR1_PHASE2_HIGH;
-		break;
-	}
-	case 5: {
-		MOTOR1_PHASE2_HIGH;
-		break;
-	}
-	case 0: {
-		MOTOR1_PHASE1_HIGH;
-		break;
-	}
-	}
-}
 
 // turns back on the motor connections to V_Motor (position specific) of motor 2
 void motor2_positive_on(void) {
@@ -214,98 +165,6 @@ void motor2_positive_on(void) {
 		break;
 	}
 	}
-}
-
-// makes motor 1 turn one step forward/backward
-void motor1_turn(void) {
-	// turn off interrupts
-	// TODO cli();
-	// turn off all motor connections
-	MOTOR1_OFF;
-	/*for (uint8_t i = 0; i < MOTOROFFDELAYSTEPS; i++) {
-	 asm volatile ("nop");
-	 }*/
-	if (motor1_forward) {
-		switch (motor1_status) {
-		case 0: {
-			MOTOR1_PHASE1_HIGH;
-			MOTOR1_PHASE2_LOW;
-			motor1_status = 1;
-			break;
-		}
-		case 1: {
-			MOTOR1_PHASE3_HIGH;
-			MOTOR1_PHASE2_LOW;
-			motor1_status = 2;
-			break;
-		}
-		case 2: {
-			MOTOR1_PHASE3_HIGH;
-			MOTOR1_PHASE1_LOW;
-			motor1_status = 3;
-			break;
-		}
-		case 3: {
-			MOTOR1_PHASE2_HIGH;
-			MOTOR1_PHASE1_LOW;
-			motor1_status = 4;
-			break;
-		}
-		case 4: {
-			MOTOR1_PHASE2_HIGH;
-			MOTOR1_PHASE3_LOW;
-			motor1_status = 5;
-			break;
-		}
-		case 5: {
-			MOTOR1_PHASE1_HIGH;
-			MOTOR1_PHASE3_LOW;
-			motor1_status = 0;
-			break;
-		}
-		}
-	} else {
-		switch (motor1_status) {
-		case 1: {
-			MOTOR1_PHASE1_HIGH;
-			MOTOR1_PHASE3_LOW;
-			motor1_status = 0;
-			break;
-		}
-		case 0: {
-			MOTOR1_PHASE2_HIGH;
-			MOTOR1_PHASE3_LOW;
-			motor1_status = 5;
-			break;
-		}
-		case 5: {
-			MOTOR1_PHASE2_HIGH;
-			MOTOR1_PHASE1_LOW;
-			motor1_status = 4;
-			break;
-		}
-		case 4: {
-			motor1_status = 3;
-			MOTOR1_PHASE3_HIGH;
-			MOTOR1_PHASE1_LOW;
-			break;
-		}
-		case 3: {
-			motor1_status = 2;
-			MOTOR1_PHASE3_HIGH;
-			MOTOR1_PHASE2_LOW;
-			break;
-		}
-		case 2: {
-			motor1_status = 1;
-			MOTOR1_PHASE1_HIGH;
-			MOTOR1_PHASE2_LOW;
-			break;
-		}
-		}
-	}
-	// turn back on interrupts
-	// TODO sei();
 }
 
 // makes motor 2 turn one step forward/backward
@@ -401,15 +260,6 @@ void motor2_turn(void) {
 	// TODO sei();
 }
 
-void motor1_setratio(uint8_t ratio) {
-	motor1_ratio = ratio;
-	if (ratio == 0) {
-		motor1_started = false;
-		motor1_counter_max = MOTORCOUNTERMAX;
-		motor1_lastadcstatus = 0;
-		motor1_pwm_status = 0;
-	}
-}
 
 void motor2_setratio(uint8_t ratio) {
 	motor2_ratio = ratio;
@@ -417,7 +267,7 @@ void motor2_setratio(uint8_t ratio) {
 		motor2_started = false;
 		motor2_counter_max = MOTORCOUNTERMAX;
 		motor2_lastadcstatus = 0;
-		motor1_pwm_status = 0;
+		motor2_pwm_status = 0;
 	}
 }
 
@@ -468,14 +318,14 @@ void motor2_startup() {
 		motor2_lastswitchtime = TCNT1;
 		motor2_turn();
 		motor2_switchADCChannel(motor2_status);
-		//motor2_adcIgnore = true;
+		motor2_adcIgnore = true;
 		if (motor2_counter < MOTORCOUNTERMIN) {
 			if (motor2_startcounter < 1000) {
 				motor2_counter_max += MOTORCOUNTERSTEP;
 				motor2_startcounter++;
 			} else {
 				motor2_startcounter = 0;
-				//motor2_switch = (motor2_maxadc+motor2_minadc)/2;
+				motor2_switch = (motor2_maxadc+motor2_minadc)/2;
 				motor2_started = 1;
 				motor2_counter_max = MOTORCOUNTERMAX;
 			}
@@ -515,7 +365,7 @@ ISR( ADC_vect )
 
 		switch (motor2_lastadcstatus) {
 		case 0:
-			if (motor2_phase_adc >= motor2_switch) {
+			if (motor2_phase_adc > motor2_switch) {
 
 				motor2_lastadcstatus = 1;
 			} else {
@@ -555,6 +405,7 @@ ISR( ADC_vect )
 }
 
 // Timer 0 overflow (for motor1 pwm)
+/*
 ISR( TIMER0_OVF_vect )
 {
 	// disable interrupts
@@ -583,8 +434,11 @@ ISR( TIMER0_OVF_vect )
 	// enable interrupts
 	sei();
 }
+*/
 
 // Timer 2 overflow (for motor2 pwm
+// FIXME Used for SUART
+/**
 ISR( TIMER2_OVF_vect )
 {
 	// disable interrupts
@@ -615,6 +469,7 @@ ISR( TIMER2_OVF_vect )
 	// enable interrupts
 	sei();
 }
+*/
 
 // ====================== MAIN ROUTINE ================================
 
@@ -628,21 +483,12 @@ int main(void) {
 	motor2_ratio = 10;
 	//motor2_forward = false;
 
-	// TODO
-	/*while (true) {
-	 for (uint16_t i = 0; i < 6550; i++) {
-	 for (uint16_t i = 0; i < 5; i++) {
-	 asm volatile ("nop");
-	 }
-	 }
-	 motor2_turn();
-	 }*/
 #endif
 
 	// finally turn on interrupts
 	sei();
 
-	/*while (true) {
+	while (true) {
 		if (motor2_ratio > 0 && motor2_started) {
 			if ((motor2_triggerComm == 1 || (motor2_triggerComm == 2 && TCNT1 < motor2_zerotime))
 					&& TCNT1 >= motor2_switchtime) {
@@ -654,97 +500,6 @@ int main(void) {
 
 			motor2_startup();
 
-		}
-	}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	uint16_t switchint = 200;
-	while (1) {
-
-		// work on motor2 =======================================
-		if (motor2_ratio > 0 && motor2_started) {
-
-
-			motor2_switchADCChannel(motor2_status);
-
-			ADCSR |= (1<<ADSC); // start conversion
-
-			// wait until conversion completes
-			while (ADCSR & (1<<ADSC)) {
-				asm volatile ("nop");
-			}
-
-			// conversion complete, save result
-			motor2_phase_adc = ADC;
-
-#if SWITCHFUNCTION == 1
-
-			// prototype:
-			int phasemaxvalue = 0;
-			int phaseminvalue = 0;
-
-			// no overflow possible (ADC-values are 10bit, not 16bit)
-			phasemaxvalue = motor2_phase_adc + MOTORADCDIFF;
-
-			// handle potential 'underflow'
-			if ((motor2_common_adc - MOTORADCDIFF) > motor2_common_adc) {
-				phaseminvalue = 0;
-			} else {
-				phaseminvalue = motor2_common_adc - MOTORADCDIFF;
-			}
-
-			if ((motor2_phase_adc < phasemaxvalue)
-					&& (motor2_phase_adc > phasemaxvalue)) {
-				// commutate motor2 if ready
-				motor2_turn();
-			}
-
-#elif SWITCHFUNCTION == 2
-
-			// prototype 2:
-			switch (motor2_lastadcstatus) {
-			case 0:
-				if (motor2_phase_adc >= switchint/2) {
-					switchint = motor2_phase_adc;
-					motor2_lastadcstatus = 1;
-				} else {
-					motor2_lastadcstatus = 2;
-				}
-				break;
-			case 1:
-				if (motor2_phase_adc <= switchint) {
-					motor2_turn();
-					motor2_lastadcstatus = 0;
-
-				}
-				break;
-			case 2:
-				if (motor2_phase_adc >= switchint) {
-					switchint = motor2_phase_adc;
-					motor2_turn();
-					motor2_lastadcstatus = 0;
-				}
-				break;
-			default:
-				break;
-			}
-
-#endif
-			// if motor2 not yet fast enough: drive it blindly
-		} else if (motor2_ratio > 0) {
-			motor2_startup();
 		}
 	}
 
